@@ -166,12 +166,3 @@ def create_vdg(source:str) -> dict:
     graph = visitor.return_serialized_labeled_graph()
     return graph 
 
-
-def main():
-    with open("testfile2.py") as file:
-        source = file.read()
-    
-    graph = create_vdg(source)
-    pprint(graph)
-
-main()

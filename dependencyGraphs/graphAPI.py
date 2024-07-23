@@ -1,8 +1,7 @@
-from fastapi import FastAPI
-from pprint import pprint
+from fastapi import FastAPI,Body
 import variableDependency
-import json
 from pydantic import BaseModel
+from typing import Annotated
 
 
 #server is activated from the command line with "fastapi dev graphAPI.py"
@@ -31,7 +30,7 @@ the returned document is a json document formatted as:
 }
 """
 @app.post("/endpoint/")
-async def generate_graph(source:SourceWrapper):
+async def generate_graph(source:Annotated[SourceWrapper,Body()]):
     try:
         graph = variableDependency.create_vdg(source.model_dump()["source"])
         return graph
