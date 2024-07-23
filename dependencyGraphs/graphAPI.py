@@ -4,6 +4,8 @@ import variableDependency
 import json
 from pydantic import BaseModel
 
+
+#server is activated from the command line with "fastapi dev graphAPI.py"
 app = FastAPI()
 
 @app.get("/")
