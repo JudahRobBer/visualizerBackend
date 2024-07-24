@@ -3,11 +3,12 @@ from pprint import pprint
 import json
 
 def main():
-    with open("testfile.py") as file:
+    with open("testfile2.py") as file:
         source = file.read()
         source = {"source":source}
-        response = requests.post(f"http://localhost:8000/endpoint/",data=json.dumps(source))
+        print(json.dumps(source))
+        response = requests.post("http://localhost:8000/endpoint/",data=json.dumps(source))
         response_data = response.json()
-        pprint(response_data)
+        #pprint(response_data)
 
 main()

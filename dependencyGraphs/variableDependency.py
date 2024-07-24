@@ -14,6 +14,8 @@ class VariableDependencyVisitor(ast.NodeVisitor):
         self.graph = nx.DiGraph()
         self.printed_variables = set()
         self.inputed_variables = set()
+        self.current_function = None
+        self.variable_function_location = {}
     
 
 
@@ -68,6 +70,8 @@ class VariableDependencyVisitor(ast.NodeVisitor):
         self._match_value_type(node,targets)
         for target in targets:
             self.graph.add_node(target)
+            self.variable_function_location[target] = self.current_function
+    
     
     def _match_value_type(self,node,targets):
         match type(node.value):
@@ -76,7 +80,7 @@ class VariableDependencyVisitor(ast.NodeVisitor):
                     self.graph.add_edge(target,node.value.id)
             case ast.Call:
                 #identify all the arguments in the function call
-                self.find_inputed_variables(node.value,targets)
+                self._find_inputed_variables(node.value,targets)
                 args = self._extract_function_arguments(node.value)
                 for target in targets:
                     for arg in args:
@@ -118,24 +122,35 @@ class VariableDependencyVisitor(ast.NodeVisitor):
         return args
     
 
+    def visit_FunctionDef(self, node: ast.FunctionDef):
+        self.current_function = node.name
+        self.generic_visit(node)
+    
+
     # Label Dependency Graph Nodes ----------------------------------------------------------------
 
 
     def label_nodes(self):
-        attributes = {variable : {"Input":False,"Printed":False} for variable in self.graph.nodes()}
-        self.label_printed_nodes(attributes)
-        self.label_inputed_nodes(attributes)
+        attributes = {variable : {"Input":False,"Printed":False,"Function":None} for variable in self.graph.nodes()}
+        self._label_printed_nodes(attributes)
+        self._label_inputed_nodes(attributes)
+        self._label_function_origin(attributes)
         nx.set_node_attributes(self.graph,attributes)
 
     
-    def label_printed_nodes(self,attributes:dict) -> None:
+    def _label_printed_nodes(self,attributes:dict) -> None:
         for variable in self.printed_variables:
             attributes[variable]["Printed"] = True
 
     
-    def label_inputed_nodes(self,attributes:dict) -> None:
+    def _label_inputed_nodes(self,attributes:dict) -> None:
         for variable in self.inputed_variables:
             attributes[variable]["Input"] = True
+
+    def _label_function_origin(self,attributes) -> None:
+        for node, func in self.variable_function_location.items():
+            attributes[node]["Function"] = func
+
 
 
     def visit_Call(self,node) -> None:
@@ -148,7 +163,7 @@ class VariableDependencyVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-    def find_inputed_variables(self,node,targets:list) -> None:
+    def _find_inputed_variables(self,node,targets:list) -> None:
         for arg in node.__dict__["args"]:
             if isinstance(arg,ast.Call):
                 if arg.func.id == "input":
@@ -165,4 +180,3 @@ def create_vdg(source:str) -> dict:
     visitor.visit(tree)
     graph = visitor.return_serialized_labeled_graph()
     return graph 
-

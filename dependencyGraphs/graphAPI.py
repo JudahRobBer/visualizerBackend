@@ -1,11 +1,13 @@
-from fastapi import FastAPI,Body
+from fastapi import FastAPI,Body,HTTPException
 import variableDependency
 from pydantic import BaseModel
 from typing import Annotated
+from fastapi.middleware.cors import CORSMiddleware
 
 
 #server is activated from the command line with "fastapi dev graphAPI.py"
 app = FastAPI()
+
 
 @app.get("/")
 async def read_root():
@@ -30,7 +32,7 @@ the returned document is a json document formatted as:
 }
 """
 @app.post("/endpoint/")
-async def generate_graph(source:Annotated[SourceWrapper,Body()]):
+async def generate_graph(source:SourceWrapper):
     try:
         graph = variableDependency.create_vdg(source.model_dump()["source"])
         return graph
