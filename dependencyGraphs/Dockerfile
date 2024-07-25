@@ -12,4 +12,9 @@ EXPOSE 8000
 
 CMD ["fastapi","run","graphAPI.py","--port","80"]
 
+
+#build image:
+#docker build -t backend .
+
+#run container:
 #docker run -d --name container -p 80:80 backend

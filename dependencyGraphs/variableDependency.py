@@ -18,13 +18,13 @@ class VariableDependencyVisitor(ast.NodeVisitor):
         self.variable_function_location = {}
     
 
-
     # Graph Exportation  -------------------------------------------------------------
-   
 
     def return_serialized_labeled_graph(self):
         self.label_nodes()
         json_graph = nx.json_graph.node_link_data(self.graph)
+        
+        #filter json object
         valid_keys = ['links','nodes']
         reduced_graph = {key:json_graph[key] for key in valid_keys}
         return reduced_graph
@@ -45,32 +45,32 @@ class VariableDependencyVisitor(ast.NodeVisitor):
 
      
     def visit_AnnAssign(self,node):
-        if isinstance(node.target,ast.Subscript):
-            targets = [node.target.value.id]
-        elif isinstance(node.target,ast.Name):
-            targets = [node.target.id]
+        targets = self._build_targets(node)
         
         self._update_graph(node,targets)
-        
         self.generic_visit(node)
 
     
     def visit_AugAssign(self,node):
+        targets = self._build_targets(node)
+
+        self._update_graph(node,targets)
+        self.generic_visit(node)
+
+
+    def _build_targets(self,node):
         if isinstance(node.target,ast.Subscript):
             targets = [node.target.value.id]
         elif isinstance(node.target,ast.Name):
             targets = [node.target.id]
+        return targets
 
-        self._update_graph(node,targets)
-
-        self.generic_visit(node) 
-    
 
     def _update_graph(self,node,targets):
-        self._match_value_type(node,targets)
-        for target in targets:
+        self._match_value_type(node,targets) #edges
+        for target in targets: #nodes
             self.graph.add_node(target)
-            self.variable_function_location[target] = self.current_function
+            self.variable_function_location[target] = self.current_function #labeling
     
     
     def _match_value_type(self,node,targets):
@@ -98,6 +98,7 @@ class VariableDependencyVisitor(ast.NodeVisitor):
     
     
     def _flatten_binOP(self,node) -> list:
+        #recursive tree exploration
         terms = []
         match type(node):
             case ast.BinOp:
@@ -147,6 +148,7 @@ class VariableDependencyVisitor(ast.NodeVisitor):
         for variable in self.inputed_variables:
             attributes[variable]["Input"] = True
 
+    
     def _label_function_origin(self,attributes) -> None:
         for node, func in self.variable_function_location.items():
             attributes[node]["Function"] = func
